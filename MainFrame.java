@@ -1,8 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package ui;
+package QuanLyThuVien;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -28,37 +24,12 @@ import java.awt.event.ActionListener;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
-import java.util.List;
-import java.util.Date;
-import java.text.SimpleDateFormat;
 import javax.swing.JPasswordField;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
-
-// === CÁC LỚP CẦN THIẾT TỪ CÁC PACKAGE KHÁC ===
-import QuanLyThuVien.SachDetailDialog; 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
-import model.Sach;         
-import dao.SachDAO;        
-
-import model.DocGia;       
-import dao.DocGiaDAO;      
-import QuanLyThuVien.DocGiaEditDialog; 
-
-import model.TacGia;       
-import dao.TacGiaDAO;      
-import QuanLyThuVien.TacGiaEditDialog; 
-
-import model.BoSuuTap;     
-import dao.BoSuuTapDAO;    
-import QuanLyThuVien.BoSuuTapEditDialog;
-
-import model.MuonTra;      
-import dao.MuonTraDAO;     
-import QuanLyThuVien.MuonSachDialog; 
-
+import java.util.List;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.DefaultListModel;
@@ -67,11 +38,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.UIManager; 
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableCellRenderer; 
-/**
- *
- * @author baonguyenn
- */
-
+import java.text.SimpleDateFormat;
 public class MainFrame extends JFrame {
     private JPanel menuPanel;
     private JPanel mainContentPanel;
@@ -79,32 +46,24 @@ public class MainFrame extends JFrame {
 
     private JTable docGiaTable;
     private DefaultTableModel docGiaTableModel;
-    private DocGiaDAO docGiaDAO;
     private JTextField docGiaSearchField;
 
     private JTable sachTable;
     private DefaultTableModel sachTableModel;
-    private SachDAO sachDAO;
     private JTextField sachSearchField;
-
+    private SachDAO sachDAO;
     private JTable tacGiaTable;
     private DefaultTableModel tacGiaTableModel;
-    private TacGiaDAO tacGiaDAO;
     private JTextField tacGiaSearchField;
 
-    private JList<BoSuuTap> boSuuTapList; 
-    private DefaultListModel<BoSuuTap> boSuuTapListModel; 
+    private JList<String> boSuuTapList;
+    private DefaultListModel<String> boSuuTapListModel;
     private JTable sachTrongBSTTable;
     private DefaultTableModel sachTrongBSTTableModel;
-    private BoSuuTapDAO boSuuTapDAO;
 
     private JTable muonTraTable;
     private DefaultTableModel muonTraTableModel;
-    private MuonTraDAO muonTraDAO;
-    private JComboBox<String> cbFilterTrangThaiMuonTra; // ComboBox lọc
-
-    private SimpleDateFormat sdfAdmin = new SimpleDateFormat("dd/MM/yyyy");
-    private SimpleDateFormat sdfMuonTra = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    private JComboBox<String> cbFilterTrangThaiMuonTra;
 
     private final String currentUsername = "admin";
 
@@ -113,15 +72,10 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1100, 700);
         setLayout(new BorderLayout());
-
-        sachDAO = new SachDAO();
-        docGiaDAO = new DocGiaDAO();
-        tacGiaDAO = new TacGiaDAO();
-        boSuuTapDAO = new BoSuuTapDAO();
-        muonTraDAO = new MuonTraDAO();
         
-        // 1. Model cho Sách
-        String[] sachColumns = {"Mã Sách", "Tên Sách", "Tác giả", "Nhà XB", "Năm XB", "Số Lượng", "Vị trí", "Ngày Thêm"};
+        sachDAO = new SachDAO();
+        // 1. Model cho Sách (ĐÃ SỬA CỘT)
+        String[] sachColumns = {"Mã Sách", "Tên Sách", "Tác giả", "Nhà XB", "Năm XB", "Số Lượng", "Còn lại", "Vị trí", "Ngày Thêm"};
         sachTableModel = new DefaultTableModel(sachColumns, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -132,7 +86,7 @@ public class MainFrame extends JFrame {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
 
-        // 3. Model cho Tác Giả (ĐÃ SỬA: Bỏ "Trình độ chuyên môn")
+        // 3. Model cho Tác Giả
         String[] tacGiaColumns = {"Mã Tác Giả", "Tên Tác Giả", "Email", "SĐT", "Chức Danh"};
         tacGiaTableModel = new DefaultTableModel(tacGiaColumns, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
@@ -170,22 +124,14 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    // Xử lý Đăng xuất
+    private void showNotImplementedMessage() {
+        JOptionPane.showMessageDialog(this, "Tính năng này chưa được triển khai (logic đã bị xóa).", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
     private void btnDangXuatActionPerformed(java.awt.event.ActionEvent evt) {
-        int confirm = JOptionPane.showConfirmDialog(
-            this,
-            "Bạn có chắc chắn muốn đăng xuất không?",
-            "Xác nhận Đăng xuất",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
-        );
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            this.dispose();
-        }
+        showNotImplementedMessage();
     }
 
-    // Tạo Menu
     private void createMenuPanel() {
         menuPanel = new JPanel();
         menuPanel.setBackground(new Color(51, 51, 51));
@@ -222,7 +168,7 @@ public class MainFrame extends JFrame {
         JButton logoutButton = new JButton("ĐĂNG XUẤT");
         logoutButton.setFont(buttonFont);
         logoutButton.setForeground(Color.WHITE);
-        logoutButton.setBackground(new Color(178, 34, 34)); // Màu đỏ
+        logoutButton.setBackground(new Color(178, 34, 34));
         logoutButton.setFocusPainted(false);
         logoutButton.setHorizontalAlignment(SwingConstants.LEFT);
         logoutButton.setBorderPainted(false);
@@ -234,7 +180,6 @@ public class MainFrame extends JFrame {
         menuPanel.add(new JLabel());
     }
 
-    // Hiển thị Panel
     private void showPanel(String panelName) {
         mainContentPanel.removeAll();
         JPanel newPanel = new JPanel(new BorderLayout());
@@ -246,24 +191,25 @@ public class MainFrame extends JFrame {
                 break;
             case "Quản lý Sách":
                 newPanel = createBookManagementPanel();
+                loadSachData();
                 break;
             case "Quản lý Độc giả":
                 newPanel = createDocGiaManagementPanel();
                 break;
             case "Quản lý Tác giả":
-                newPanel = createTacGiaManagementPanel(); // Placeholder
+                newPanel = createTacGiaManagementPanel(); 
                 break;
             case "Bộ sưu tập":
-                newPanel = createBoSuuTapManagementPanel(); // Placeholder
+                newPanel = createBoSuuTapManagementPanel(); 
                 break;
             case "Quản lý Mượn/Trả":
-                newPanel = createMuonTraManagementPanel(); // Placeholder
+                newPanel = createMuonTraManagementPanel(); 
                 break;
             case "Báo cáo & Thống kê":
                 newPanel.add(new JLabel("<< BÁO CÁO & THỐNG KÊ >>", SwingConstants.CENTER));
                 break;
             case "Đổi mật khẩu":
-                newPanel = createChangePasswordPanel(); // Hoàn thành logic bị cắt
+                newPanel = createChangePasswordPanel(); 
                 break;
             default:
                 newPanel.add(new JLabel(panelName + " chưa có.", SwingConstants.CENTER));
@@ -293,16 +239,19 @@ public class MainFrame extends JFrame {
         topPanel.add(searchPanel, BorderLayout.CENTER);
         panel.add(topPanel, BorderLayout.NORTH);
         
-        String[] columnNames = {"Mã Sách", "Tên Sách", "Tác giả", "Nhà XB", "Năm XB", "Số Lượng", "Vị trí", "Ngày Thêm"};
-        
         sachTable = new JTable(sachTableModel);
         sachTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         sachTable.setRowHeight(25);
-        sachTable.getColumnModel().getColumn(0).setPreferredWidth(80);
-        sachTable.getColumnModel().getColumn(1).setPreferredWidth(250);
-        sachTable.getColumnModel().getColumn(2).setPreferredWidth(200);
-        sachTable.getColumnModel().getColumn(6).setPreferredWidth(120);
-        sachTable.getColumnModel().getColumn(7).setPreferredWidth(100);
+        
+        // ĐỘ RỘNG CỘT (ĐÃ SỬA)
+        sachTable.getColumnModel().getColumn(0).setPreferredWidth(80);  // Mã Sách
+        sachTable.getColumnModel().getColumn(1).setPreferredWidth(250); // Tên Sách
+        sachTable.getColumnModel().getColumn(2).setPreferredWidth(180); // Tác giả
+        sachTable.getColumnModel().getColumn(5).setPreferredWidth(60);  // Số Lượng
+        sachTable.getColumnModel().getColumn(6).setPreferredWidth(70);  // Còn lại
+        sachTable.getColumnModel().getColumn(7).setPreferredWidth(120); // Vị trí
+        sachTable.getColumnModel().getColumn(8).setPreferredWidth(100); // Ngày Thêm
+        
         JTableHeader header = sachTable.getTableHeader();
         header.setDefaultRenderer(new HeaderRenderer(sachTable));
         JScrollPane scrollPane = new JScrollPane(sachTable);
@@ -317,114 +266,121 @@ public class MainFrame extends JFrame {
         controlPanel.add(deleteButton);
         panel.add(controlPanel, BorderLayout.SOUTH);
         
-        loadSachData();
-        searchButton.addActionListener(e -> timKiemSach());
-        viewAllButton.addActionListener(e -> loadSachData());
-        addButton.addActionListener(e -> themSach());
+        // === SỬA LỖI QUAN TRỌNG NHẤT LÀ Ở ĐÂY ===
+        searchButton.addActionListener(e -> showNotImplementedMessage());
+        viewAllButton.addActionListener(e -> showNotImplementedMessage());
+        
+        // DÒNG NÀY ĐÃ ĐƯỢC SỬA:
+        addButton.addActionListener(e -> {
+            try {
+                themSach();
+            } catch (Exception ex) {
+                System.getLogger(MainFrame.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            }
+        }); // <-- Sửa từ showNotImplementedMessage()
+        
         editButton.addActionListener(e -> suaSach());
         deleteButton.addActionListener(e -> xoaSach());
         
-        sachTable.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent mouseEvent) {
-                JTable table = (JTable) mouseEvent.getSource();
-                if (mouseEvent.getClickCount() == 2 && table.getSelectedRow() != -1) {
-                    int row = table.getSelectedRow();
-                    String maSach = table.getValueAt(row, 0).toString();
-                    Sach sach = sachDAO.getSachByMaSach(maSach);
-                    if (sach != null) {
-                        // Cần đảm bảo SachDetailDialog được tạo đúng
-                        // SachDetailDialog detailDialog = new SachDetailDialog(MainFrame.this, sach); 
-                        // detailDialog.setVisible(true);
-                    }
-                }
-            }
-        });
         return panel;
     }
-    private void loadSachData() {
-        try {
-            sachTableModel.setRowCount(0);
-            List<Sach> danhSach = sachDAO.getAllSach();
-            for (Sach s : danhSach) {
-                String ngayThemStr = (s.getNgayThem() != null) ? sdfAdmin.format(s.getNgayThem()) : "N/A";
-                sachTableModel.addRow(new Object[]{
-                    s.getMaSach(), s.getTenSach(), s.getTenTacGiaDisplay(),
-                    s.getNhaXuatBan(), s.getNamXuatBan() > 0 ? s.getNamXuatBan() : "N/A",
-                    s.getSoLuong(), s.getViTri(), ngayThemStr
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu Sách: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+
+    // === CÁC HÀM LOGIC SÁCH ===
+    
+    // HÀM NÀY ĐÃ ĐƯỢC SỬA (trong các hướng dẫn trước)
+    private void themSach() throws Exception {
+        // Bước 1: Lấy mã sách mới nhất từ CSDL
+        String newMaSach = sachDAO.generateNewMaSach();
+
+        // Bước 2: Tạo và hiển thị Dialog
+        SachEditDialog dialog = new SachEditDialog(this, newMaSach);
+        dialog.setVisible(true);
+
+        // Bước 3: (Sau khi dialog đóng lại) Kiểm tra xem có lưu thành công không
+        if (dialog.isSaveSuccess()) {
+            // Nếu thành công, TẢI LẠI DỮ LIỆU BẢNG
+            loadSachData(); 
+            JOptionPane.showMessageDialog(this, "Đã thêm sách thành công!");
         }
     }
-    private void timKiemSach() {
-        String keyword = sachSearchField.getText().trim();
-        if (keyword.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập từ khóa.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+    // HÀM MỚI DÀNH CHO NÚT SỬA SÁCH
+    private void suaSach() {
+        // 1. Kiểm tra xem người dùng đã chọn hàng nào chưa
+        int selectedRow = sachTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, 
+                "Vui lòng chọn một cuốn sách để sửa.", 
+                "Chưa chọn sách", 
+                JOptionPane.WARNING_MESSAGE);
             return;
         }
-        try {
-            sachTableModel.setRowCount(0);
-            List<Sach> danhSach = sachDAO.timKiemSachNangCao(keyword, "Tất cả");
-            if (danhSach.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy sách.", "Kết quả", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                for (Sach s : danhSach) {
-                    String ngayThemStr = (s.getNgayThem() != null) ? sdfAdmin.format(s.getNgayThem()) : "N/A";
-                    sachTableModel.addRow(new Object[]{
-                        s.getMaSach(), s.getTenSach(), s.getTenTacGiaDisplay(),
-                        s.getNhaXuatBan(), s.getNamXuatBan() > 0 ? s.getNamXuatBan() : "N/A",
-                        s.getSoLuong(), s.getViTri(), ngayThemStr
-                    });
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi tìm Sách: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    private void themSach() {
-        // Cần đảm bảo SachEditDialog được tạo đúng
-        // SachEditDialog dialog = new SachEditDialog(this, sachDAO, null);
-        // dialog.setVisible(true);
-        // if (dialog.isSaveSuccess()) loadSachData();
-        JOptionPane.showMessageDialog(this, "Tính năng Thêm Sách chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    private void suaSach() {
-        int row = sachTable.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn sách để sửa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); return; }
-        // ... logic sửa sách ...
-        JOptionPane.showMessageDialog(this, "Tính năng Sửa Sách chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    private void xoaSach() {
-        int row = sachTable.getSelectedRow();
-        if (row == -1) { 
-            JOptionPane.showMessageDialog(this, "Chọn sách để xóa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); 
-            return; 
-        }
-        
-        String ma = sachTableModel.getValueAt(row, 0).toString();
-        String ten = sachTableModel.getValueAt(row, 1).toString();
-        
-        int confirm = JOptionPane.showConfirmDialog(this, "Xóa sách '" + ten + "' (Mã: " + ma + ")?\n"
-                + "CẢNH BÁO: Hành động này sẽ ẩn sách khỏi hệ thống nhưng vẫn giữ lịch sử mượn trả.", 
-                "Xác nhận", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (sachDAO.xoaSach(ma)) { 
-                    JOptionPane.showMessageDialog(this, "Xóa (ẩn) sách thành công!");
-                    loadSachData(); 
-                } else {
-                    JOptionPane.showMessageDialog(this, "Xóa thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xóa Sách: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
 
+        // 2. Lấy Mã Sách từ hàng đã chọn (Cột 0)
+        String maSach = sachTableModel.getValueAt(selectedRow, 0).toString();
+
+        // 3. Dùng DAO để lấy TOÀN BỘ thông tin sách (bao gồm tác giả)
+        Sach sachToEdit = sachDAO.getSachByMa(maSach);
+
+        if (sachToEdit == null) {
+            JOptionPane.showMessageDialog(this, "Không thể tìm thấy dữ liệu sách (Lỗi CSDL).", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // 4. Mở Dialog ở chế độ SỬA (dùng Constructor mới)
+        SachEditDialog dialog = new SachEditDialog(this, sachToEdit);
+        dialog.setVisible(true);
+
+        // 5. Nếu lưu thành công, tải lại bảng
+        if (dialog.isSaveSuccess()) {
+            loadSachData();
+            JOptionPane.showMessageDialog(this, "Đã cập nhật sách thành công!");
+        }
+    }
+    // ... (Các hàm logic khác chưa triển khai) ...
+    // HÀM MỚI DÀNH CHO NÚT XÓA SÁCH
+    private void xoaSach() {
+        // 1. Kiểm tra xem người dùng đã chọn hàng nào chưa
+        int selectedRow = sachTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, 
+                "Vui lòng chọn một cuốn sách để xóa.", 
+                "Chưa chọn sách", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 2. Lấy thông tin sách từ JTable
+        String maSach = sachTableModel.getValueAt(selectedRow, 0).toString();
+        String tenSach = sachTableModel.getValueAt(selectedRow, 1).toString();
+
+        // 3. Hiển thị hộp thoại xác nhận (Confirm Dialog)
+        String confirmMsg = "Bạn có chắc chắn muốn xóa (lưu trữ) sách:\n"
+                          + tenSach + " (Mã: " + maSach + ")\n"
+                          + "Sách sẽ bị ẩn đi, không xóa vĩnh viễn.";
+                          
+        int choice = JOptionPane.showConfirmDialog(
+            this, 
+            confirmMsg, 
+            "Xác nhận Xóa Mềm", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.QUESTION_MESSAGE
+        );
+
+        // 4. Xử lý nếu người dùng đồng ý (chọn Yes)
+        if (choice == JOptionPane.YES_OPTION) {
+            // Gọi DAO để thực hiện xóa mềm
+            boolean success = sachDAO.softDeleteSach(maSach);
+            
+            if (success) {
+                // Tải lại bảng (cuốn sách sẽ biến mất vì isArchived=1)
+                loadSachData(); 
+                JOptionPane.showMessageDialog(this, "Đã xóa (lưu trữ) sách thành công.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa sách thất bại (Lỗi CSDL).", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        // Nếu người dùng chọn "No" hoặc đóng dialog, không làm gì cả.
+    }
 
     // Quản lý Độc giả
     private JPanel createDocGiaManagementPanel() {
@@ -446,7 +402,6 @@ public class MainFrame extends JFrame {
         topPanel.add(searchPanel, BorderLayout.CENTER);
         panel.add(topPanel, BorderLayout.NORTH);
         
-        // Dùng docGiaTableModel đã định nghĩa ở constructor
         docGiaTable = new JTable(docGiaTableModel);
         docGiaTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         docGiaTable.setRowHeight(25);
@@ -464,122 +419,13 @@ public class MainFrame extends JFrame {
         controlPanel.add(blockButton);
         panel.add(controlPanel, BorderLayout.SOUTH);
         
-        loadDocGiaData();
-        searchButton.addActionListener(e -> timKiemDocGia());
-        viewAllButton.addActionListener(e -> loadDocGiaData());
-        addButton.addActionListener(e -> themDocGia());
-        editButton.addActionListener(e -> suaDocGia());
-        deleteButton.addActionListener(e -> xoaDocGia());
-        blockButton.addActionListener(e -> khoaMoKhoaDocGia());
+        searchButton.addActionListener(e -> showNotImplementedMessage());
+        viewAllButton.addActionListener(e -> showNotImplementedMessage());
+        addButton.addActionListener(e -> showNotImplementedMessage());
+        editButton.addActionListener(e -> showNotImplementedMessage());
+        deleteButton.addActionListener(e -> showNotImplementedMessage());
+        blockButton.addActionListener(e -> showNotImplementedMessage());
         return panel;
-    }
-    private void loadDocGiaData() {
-        try {
-            docGiaTableModel.setRowCount(0);
-            List<DocGia> danhSach = docGiaDAO.getAllDocGia();
-            SimpleDateFormat sdfDob = new SimpleDateFormat("dd/MM/yyyy");
-            for (DocGia dg : danhSach) {
-                String trangThai = dg.getTrangThai();
-                String ngaySinhStr = (dg.getNgaySinh() != null) ? sdfDob.format(dg.getNgaySinh()) : "";
-                docGiaTableModel.addRow(new Object[]{
-                    dg.getMaDocGia(), dg.getHoTen(), ngaySinhStr, dg.getEmail(),
-                    dg.getSdt(), dg.getDiaChi(), trangThai
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu độc giả: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    private void timKiemDocGia() {
-        String keyword = docGiaSearchField.getText().trim();
-        if (keyword.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập từ khóa.", "Thông báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        try {
-            docGiaTableModel.setRowCount(0);
-            List<DocGia> danhSach = docGiaDAO.timKiemDocGia(keyword);
-            SimpleDateFormat sdfDob = new SimpleDateFormat("dd/MM/yyyy");
-            if (danhSach.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy độc giả.", "Kết quả", JOptionPane.INFORMATION_MESSAGE);
-            }
-            for (DocGia dg : danhSach) {
-                String trangThai = dg.getTrangThai();
-                String ngaySinhStr = (dg.getNgaySinh() != null) ? sdfDob.format(dg.getNgaySinh()) : "";
-                docGiaTableModel.addRow(new Object[]{
-                    dg.getMaDocGia(), dg.getHoTen(), ngaySinhStr, dg.getEmail(),
-                    dg.getSdt(), dg.getDiaChi(), trangThai
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi tìm Độc Giả: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    private void themDocGia() {
-        // Cần đảm bảo DocGiaEditDialog được tạo đúng
-        // DocGiaEditDialog dialog = new DocGiaEditDialog(this, docGiaDAO, null);
-        // dialog.setVisible(true);
-        // if (dialog.isSaveSuccess()) loadDocGiaData();
-        JOptionPane.showMessageDialog(this, "Tính năng Thêm Độc Giả chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    private void suaDocGia() {
-        int row = docGiaTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Chọn độc giả để sửa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        // ... logic sửa độc giả ...
-        JOptionPane.showMessageDialog(this, "Tính năng Sửa Độc Giả chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    private void xoaDocGia() {
-        int row = docGiaTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Chọn độc giả để xóa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        String ma = docGiaTableModel.getValueAt(row, 0).toString();
-        String ten = docGiaTableModel.getValueAt(row, 1).toString();
-        int confirm = JOptionPane.showConfirmDialog(this, "Xóa độc giả '" + ten + "' (Mã: " + ma + ")?", "Xác nhận", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (docGiaDAO.xoaDocGia(ma)) {
-                    JOptionPane.showMessageDialog(this, "Xóa thành công!");
-                    loadDocGiaData();
-                } else {
-                    JOptionPane.showMessageDialog(this, "Xóa thất bại (Độc giả đang mượn sách?).", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xóa Độc Giả: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-    private void khoaMoKhoaDocGia() {
-        int row = docGiaTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Chọn độc giả để Khóa/Mở.", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        String ma = docGiaTableModel.getValueAt(row, 0).toString();
-        String ten = docGiaTableModel.getValueAt(row, 1).toString();
-        String status = docGiaTableModel.getValueAt(row, 6).toString();
-        boolean seBiKhoa = status.equals("Hoạt động");
-        String action = seBiKhoa ? "KHÓA" : "MỞ KHÓA";
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn muốn " + action + " tài khoản '" + ten + "' (Mã: " + ma + ")?", "Xác nhận", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (docGiaDAO.khoaMoKhoaDocGia(ma, seBiKhoa)) {
-                    JOptionPane.showMessageDialog(this, action + " thành công!");
-                    loadDocGiaData();
-                } else {
-                    JOptionPane.showMessageDialog(this, action + " thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi " + action + ": " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        }
     }
     
     // Quản lý Tác giả
@@ -609,73 +455,11 @@ public class MainFrame extends JFrame {
         controlPanel.add(deleteButton);
         panel.add(controlPanel, BorderLayout.SOUTH);
         
-        loadTacGiaData();
-        
-        addButton.addActionListener(e -> themTacGia());
-        editButton.addActionListener(e -> suaTacGia());
-        deleteButton.addActionListener(e -> xoaTacGia());
+        addButton.addActionListener(e -> showNotImplementedMessage());
+        editButton.addActionListener(e -> showNotImplementedMessage());
+        deleteButton.addActionListener(e -> showNotImplementedMessage());
 
         return panel;
-    }
-
-    private void loadTacGiaData() {
-         try {
-            tacGiaTableModel.setRowCount(0);
-            List<TacGia> danhSach = tacGiaDAO.getAllTacGia();
-            for (TacGia tg : danhSach) {
-                // ĐÃ SỬA: Bỏ tg.getTrinhDoChuyenMon()
-                tacGiaTableModel.addRow(new Object[]{
-                    tg.getMaTacGia(), tg.getTenTacGia(), tg.getEmail(), 
-                    tg.getSdt(), tg.getChucDanh()
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu Tác Giả: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private void themTacGia() {
-        // Cần đảm bảo TacGiaEditDialog được tạo đúng
-        // TacGiaEditDialog dialog = new TacGiaEditDialog(this, tacGiaDAO, null);
-        // dialog.setVisible(true);
-        // if (dialog.isSaveSuccess()) loadTacGiaData();
-        JOptionPane.showMessageDialog(this, "Tính năng Thêm Tác Giả chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    private void suaTacGia() {
-        int row = tacGiaTable.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn tác giả để sửa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); return; }
-        // ... logic sửa tác giả ...
-        JOptionPane.showMessageDialog(this, "Tính năng Sửa Tác Giả chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    private void xoaTacGia() {
-        int row = tacGiaTable.getSelectedRow();
-        if (row == -1) { 
-            JOptionPane.showMessageDialog(this, "Chọn tác giả để xóa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); 
-            return; 
-        }
-        
-        String ma = tacGiaTableModel.getValueAt(row, 0).toString();
-        String ten = tacGiaTableModel.getValueAt(row, 1).toString();
-        
-        int confirm = JOptionPane.showConfirmDialog(this, "Xóa tác giả '" + ten + "' (Mã: " + ma + ")?\n"
-                + "CẢNH BÁO: Thao tác này có thể ảnh hưởng đến các sách liên quan.",
-                "Xác nhận", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (tacGiaDAO.xoaTacGia(ma)) { 
-                    JOptionPane.showMessageDialog(this, "Xóa tác giả thành công!");
-                    loadTacGiaData(); 
-                } else {
-                    JOptionPane.showMessageDialog(this, "Xóa thất bại (Tác giả có thể còn sách liên kết).", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xóa Tác Giả: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        }
     }
 
     // Quản lý Bộ sưu tập
@@ -683,7 +467,6 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Chia panel làm đôi: List BST bên trái, Sách trong BST bên phải
         boSuuTapList = new JList<>(boSuuTapListModel);
         boSuuTapList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane listScrollPane = new JScrollPane(boSuuTapList);
@@ -707,89 +490,17 @@ public class MainFrame extends JFrame {
         controlPanel.add(deleteButton);
         panel.add(controlPanel, BorderLayout.SOUTH);
         
-        loadBoSuuTapData();
-        
-        addButton.addActionListener(e -> themBoSuuTap());
-        editButton.addActionListener(e -> suaBoSuuTap());
-        deleteButton.addActionListener(e -> xoaBoSuuTap());
+        addButton.addActionListener(e -> showNotImplementedMessage());
+        editButton.addActionListener(e -> showNotImplementedMessage());
+        deleteButton.addActionListener(e -> showNotImplementedMessage());
         
         boSuuTapList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                BoSuuTap selectedBST = boSuuTapList.getSelectedValue();
-                if (selectedBST != null) {
-                    loadSachTrongBST(selectedBST.getMaBoSuuTap());
-                } else {
-                    sachTrongBSTTableModel.setRowCount(0);
-                }
+                sachTrongBSTTableModel.setRowCount(0);
             }
         });
 
         return panel;
-    }
-    
-    private void loadBoSuuTapData() {
-         try {
-            boSuuTapListModel.clear();
-            List<BoSuuTap> danhSach = boSuuTapDAO.getAll();
-            for (BoSuuTap bst : danhSach) {
-                boSuuTapListModel.addElement(bst);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu Bộ Sưu Tập: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private void loadSachTrongBST(int maBoSuuTap) {
-        try {
-            sachTrongBSTTableModel.setRowCount(0);
-            List<Sach> danhSachSach = boSuuTapDAO.getSachByBoSuuTap(maBoSuuTap);
-            for (Sach s : danhSachSach) {
-                sachTrongBSTTableModel.addRow(new Object[]{
-                    s.getMaSach(), s.getTenSach(), s.getTenTacGiaDisplay(), s.getNamXuatBan()
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu Sách trong BST: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private void themBoSuuTap() {
-        // Cần đảm bảo BoSuuTapEditDialog được tạo đúng
-        // BoSuuTapEditDialog dialog = new BoSuuTapEditDialog(this, boSuuTapDAO, null);
-        // dialog.setVisible(true);
-        // if (dialog.isSaveSuccess()) loadBoSuuTapData();
-        JOptionPane.showMessageDialog(this, "Tính năng Thêm Bộ Sưu Tập chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    private void suaBoSuuTap() {
-        BoSuuTap selectedBST = boSuuTapList.getSelectedValue();
-        if (selectedBST == null) { JOptionPane.showMessageDialog(this, "Chọn bộ sưu tập để sửa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); return; }
-        
-        // ... logic sửa Bộ Sưu Tập ...
-        JOptionPane.showMessageDialog(this, "Tính năng Sửa Bộ Sưu Tập chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    private void xoaBoSuuTap() {
-        BoSuuTap selectedBST = boSuuTapList.getSelectedValue();
-        if (selectedBST == null) { JOptionPane.showMessageDialog(this, "Chọn bộ sưu tập để xóa.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); return; }
-        
-        int confirm = JOptionPane.showConfirmDialog(this, "Xóa Bộ sưu tập '" + selectedBST.getTenBoSuuTap() + "'?",
-                "Xác nhận", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (boSuuTapDAO.delete(selectedBST.getMaBoSuuTap())) { 
-                    JOptionPane.showMessageDialog(this, "Xóa Bộ sưu tập thành công!");
-                    loadBoSuuTapData(); 
-                } else {
-                    JOptionPane.showMessageDialog(this, "Xóa thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xóa Bộ sưu tập: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        }
     }
     
     // Quản lý Mượn trả
@@ -820,86 +531,11 @@ public class MainFrame extends JFrame {
         controlPanel.add(giaHanButton);
         panel.add(controlPanel, BorderLayout.SOUTH);
         
-        loadMuonTraData(null);
-        
-        addButton.addActionListener(e -> themMuonTra());
-        traSachButton.addActionListener(e -> traSach());
-        giaHanButton.addActionListener(e -> giaHanMuonTra());
+        addButton.addActionListener(e -> showNotImplementedMessage());
+        traSachButton.addActionListener(e -> showNotImplementedMessage());
+        giaHanButton.addActionListener(e -> showNotImplementedMessage());
         
         return panel;
-    }
-    
-    private void loadMuonTraData(String trangThaiFilter) {
-        try {
-            muonTraTableModel.setRowCount(0);
-            List<MuonTra> danhSach = muonTraDAO.getAllMuonTra(trangThaiFilter);
-            for (MuonTra mt : danhSach) {
-                String ngayTraStr = mt.getNgayTraThucTe() != null ? sdfMuonTra.format(mt.getNgayTraThucTe()) : "Chưa trả";
-                muonTraTableModel.addRow(new Object[]{
-                    mt.getMaMuonTra(), 
-                    mt.getDocGia().getHoTen() + " (" + mt.getDocGia().getMaDocGia() + ")", 
-                    mt.getSach().getTenSach() + " (" + mt.getSach().getMaSach() + ")",
-                    sdfMuonTra.format(mt.getNgayMuon()),
-                    sdfMuonTra.format(mt.getNgayHenTra()),
-                    ngayTraStr,
-                    mt.getTrangThaiMuonTra(),
-                    mt.getLoaiMuon()
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu Mượn/Trả: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private void themMuonTra() {
-        // Cần đảm bảo MuonSachDialog được tạo đúng
-        // MuonSachDialog dialog = new MuonSachDialog(this, muonTraDAO, docGiaDAO, sachDAO);
-        // dialog.setVisible(true);
-        // if (dialog.isSaveSuccess()) {
-        //     loadMuonTraData(null);
-        //     loadSachData();
-        // }
-        JOptionPane.showMessageDialog(this, "Tính năng Tạo Phiếu Mượn chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    private void traSach() {
-        int row = muonTraTable.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn phiếu mượn để đánh dấu trả sách.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); return; }
-        
-        int maMuonTra = (int) muonTraTableModel.getValueAt(row, 0);
-        String trangThai = muonTraTableModel.getValueAt(row, 6).toString();
-        
-        if (trangThai.equals("Đã trả")) {
-            JOptionPane.showMessageDialog(this, "Phiếu mượn này đã được trả trước đó.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        int confirm = JOptionPane.showConfirmDialog(this, "Xác nhận đánh dấu ĐÃ TRẢ cho phiếu mượn #" + maMuonTra + "?",
-                "Xác nhận Trả sách", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-                
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (muonTraDAO.traSach(maMuonTra)) {
-                    JOptionPane.showMessageDialog(this, "Đánh dấu trả sách thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                    loadMuonTraData(null); 
-                    loadSachData();    
-                } else {
-                     JOptionPane.showMessageDialog(this, "Đánh dấu trả sách thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception e) {
-                 JOptionPane.showMessageDialog(this, "Lỗi khi đánh dấu trả sách: " + e.getMessage(), "Lỗi nghiêm trọng", JOptionPane.ERROR_MESSAGE);
-                 e.printStackTrace();
-            }
-        }
-    }
-    
-    private void giaHanMuonTra() {
-         int row = muonTraTable.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn phiếu mượn để gia hạn.", "Chưa chọn", JOptionPane.WARNING_MESSAGE); return; }
-        
-        // ... logic gia hạn ...
-        JOptionPane.showMessageDialog(this, "Tính năng Gia Hạn chưa được triển khai hoàn chỉnh.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
     // Hàm đổi Mật khẩu
@@ -944,58 +580,33 @@ public class MainFrame extends JFrame {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);
 
-        // Hàng 1: Mật khẩu cũ
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
+        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.EAST;
+        gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0;
         formPanel.add(oldPassLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
+        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         formPanel.add(oldPassField, gbc);
 
-        // Hàng 2: Mật khẩu mới
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
+        gbc.gridx = 0; gbc.gridy = 1; gbc.anchor = GridBagConstraints.EAST;
+        gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0;
         formPanel.add(newPassLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
+        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         formPanel.add(newPassField, gbc);
 
-        // Hàng 3: Xác nhận mật khẩu mới
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
+        gbc.gridx = 0; gbc.gridy = 2; gbc.anchor = GridBagConstraints.EAST;
+        gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0;
         formPanel.add(confirmPassLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
+        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         formPanel.add(confirmPassField, gbc); 
 
-        // Hàng 4: Nút Đổi mật khẩu
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 2; // Dàn ra 2 cột
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2; 
         gbc.anchor = GridBagConstraints.CENTER;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0;
         formPanel.add(changeButton, gbc);
         
-        changeButton.addActionListener(e -> JOptionPane.showMessageDialog(panel, "Tính năng Đổi mật khẩu chưa được triển khai hoàn chỉnh."));
+        changeButton.addActionListener(e -> showNotImplementedMessage());
 
         panel.add(formPanel, new GridBagConstraints());
         return panel;
@@ -1018,7 +629,39 @@ public class MainFrame extends JFrame {
             return label;
         }
     }
+    // TẠO HÀM MỚI NÀY (hoặc viết đè lên hàm cũ)
+    private void loadSachData() {
+        // Xóa dữ liệu cũ
+        sachTableModel.setRowCount(0);
 
+        // Lấy danh sách Sách (đã bao gồm Tác giả) từ DAO
+        List<Sach> danhSach = sachDAO.getAllSach();
+
+        // Định dạng ngày (Nếu cột ngayThem của bạn là DATETIME)
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+
+        for (Sach s : danhSach) {
+            // Xử lý cột "Còn lại"
+            String conLaiStr = (s.getConLai() > 0) ? String.valueOf(s.getConLai()) : "Hết";
+
+            // Xử lý cột "Tác giả" (từ List<TacGia>)
+            String tacGiaDisplay = s.getTenTacGiaDisplay(); // Dùng hàm có sẵn trong Sach.java
+
+            Object[] row = new Object[] {
+                s.getMaSach(),
+                s.getTenSach(),
+                tacGiaDisplay,
+                s.getNhaXuatBan(),
+                s.getNamXuatBan() == 0 ? "N/A" : s.getNamXuatBan(), // Tránh hiển thị số 0
+                s.getSoLuong(),
+                conLaiStr,
+                s.getViTri(),
+                s.getNgayThem() != null ? sdf.format(s.getNgayThem()) : "N/A"
+            };
+
+            sachTableModel.addRow(row);
+        }
+    }
 
     // Hàm main
     public static void main(String[] args) {
