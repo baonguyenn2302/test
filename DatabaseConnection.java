@@ -1,17 +1,11 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package util;
+package QuanLyThuVien;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-/**
- *
- * @author baonguyenn
- */
+
 public class DatabaseConnection {
+
     private static final String SERVER_NAME = "LAPTOP-5B5F23MC\\QLTV"; 
     private static final String DATABASE_NAME = "QuanLyThuVienDB"; 
 
@@ -49,7 +43,47 @@ public class DatabaseConnection {
         
         return conn;
     }
+    // ... (bên dưới hàm getConnection() và bên trên hàm main())
+    
+    /**
+     * Helper method để đóng các tài nguyên JDBC một cách an toàn.
+     * @param rs ResultSet (có thể null)
+     * @param ps PreparedStatement (có thể null)
+     * @param conn Connection (có thể null)
+     */
+    public static void closeResource(java.sql.ResultSet rs, java.sql.PreparedStatement ps, Connection conn) {
+        try {
+            if (rs != null && !rs.isClosed()) {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi đóng ResultSet: " + e.getMessage());
+        }
+        try {
+            if (ps != null && !ps.isClosed()) {
+                ps.close();
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi đóng PreparedStatement: " + e.getMessage());
+        }
+        try {
+            if (conn != null && !conn.isClosed()) {
+                conn.close();
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi đóng Connection: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Helper method (Overload) để đóng PreparedStatement và Connection.
+     */
+    public static void closeResource(java.sql.PreparedStatement ps, Connection conn) {
+        closeResource(null, ps, conn);
+    }
 
+// ... (hàm main() của bạn nằm ở đây)
+//     public static void main(String[] args) { ... }
 
      
     public static void main(String[] args) {
@@ -65,4 +99,5 @@ public class DatabaseConnection {
             System.err.println(">>> KIỂM TRA KẾT NỐI THẤT BẠI! <<<");
         }
     }
+    
 }
