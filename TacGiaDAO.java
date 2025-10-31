@@ -1,143 +1,110 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package dao;
+package QuanLyThuVien;
 
-import model.TacGia;
-import util.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-/**
- *
- * @author baonguyenn
- */
+
 public class TacGiaDAO {
-    // Helper: Ánh xạ một hàng ResultSet sang đối tượng TacGia
-    private TacGia mapRowToTacGia(ResultSet rs) throws SQLException {
-        TacGia tg = new TacGia();
-        tg.setMaTacGia(rs.getString("maTacGia"));
-        tg.setTenTacGia(rs.getString("tenTacGia"));
-        tg.setEmail(rs.getString("email"));
-        tg.setSdt(rs.getString("sdt"));
-        tg.setChucDanh(rs.getString("chucDanh"));
-        return tg;
+
+    // 1. Tìm tác giả theo TÊN
+    public TacGia findTacGiaByTen(String tenTacGia) {
+        String sql = "SELECT * FROM TACGIA WHERE tenTacGia = ?";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, tenTacGia);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new TacGia(
+                    rs.getString("maTacGia"),
+                    rs.getString("tenTacGia"),
+                    rs.getString("email"),
+                    rs.getString("sdt"),
+                    rs.getString("chucDanh")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseConnection.closeResource(rs, ps, conn);
+        }
+        return null; // Không tìm thấy
     }
 
-    // Lấy toàn bộ danh sách tác giả
-    public List<TacGia> getAllTacGia() {
-        List<TacGia> ds = new ArrayList<>();
-        String sql = "SELECT * FROM TACGIA ORDER BY tenTacGia";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                ds.add(mapRowToTacGia(rs));
+    // 2. Thêm một tác giả mới (private vì nó được gọi bởi findOrCreate)
+    private TacGia addTacGia(String tenTacGia) {
+        String newMaTacGia = generateNewMaTacGia();
+        String sql = "INSERT INTO TACGIA (maTacGia, tenTacGia) VALUES (?, ?)";
+        Connection conn = null;
+        PreparedStatement ps = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, newMaTacGia);
+            ps.setString(2, tenTacGia);
+            
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                // Trả về đối tượng Tác giả vừa được tạo
+                return new TacGia(newMaTacGia, tenTacGia, null, null, null);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseConnection.closeResource(ps, conn);
+        }
+        return null; // Thêm thất bại
+    }
+
+    // 3. Hàm tạo Mã Tác Giả mới (ví dụ: TG001 -> TG002)
+    public String generateNewMaTacGia() {
+        String sql = "SELECT TOP 1 maTacGia FROM TACGIA ORDER BY maTacGia DESC";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String newId = "TG001"; // ID mặc định nếu bảng trống
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            ps = conn.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                String lastId = rs.getString("maTacGia");
+                // Lấy phần số từ ID (ví dụ: TG005 -> 5)
+                String trimmedLastId = lastId.trim();
+                int nextIdNum = Integer.parseInt(lastId.substring(2)) + 1;
+                // Format lại (ví dụ: 6 -> TG006)
+                newId = String.format("TG%03d", nextIdNum);
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            DatabaseConnection.closeResource(rs, ps, conn);
         }
-        return ds;
+        return newId;
     }
 
-    // Lấy thông tin 1 tác giả bằng Mã
-    public TacGia getTacGiaByMaTacGia(String maTacGia) {
-        String sql = "SELECT * FROM TACGIA WHERE maTacGia = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, maTacGia);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapRowToTacGia(rs);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // Thêm tác giả mới
-    public boolean themTacGia(TacGia tg) {
-        String sql = "INSERT INTO TACGIA(maTacGia, tenTacGia, email, sdt, chucDanh) " +
-                     "VALUES(?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, tg.getMaTacGia());
-            pstmt.setString(2, tg.getTenTacGia());
-            pstmt.setString(3, tg.getEmail());
-            pstmt.setString(4, tg.getSdt());
-            pstmt.setString(5, tg.getChucDanh());
-            
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // Sửa thông tin tác giả
-    public boolean suaTacGia(TacGia tg) {
-        String sql = "UPDATE TACGIA SET tenTacGia = ?, email = ?, sdt = ?, chucDanh = ? " +
-                     "WHERE maTacGia = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, tg.getTenTacGia());
-            pstmt.setString(2, tg.getEmail());
-            pstmt.setString(3, tg.getSdt());
-            pstmt.setString(4, tg.getChucDanh());
-            pstmt.setString(5, tg.getMaTacGia());
-            
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // Xóa tác giả
-    public boolean xoaTacGia(String maTacGia) {
-        String sql = "DELETE FROM TACGIA WHERE maTacGia = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, maTacGia);
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Lỗi xóa tác giả (Có thể do ràng buộc khóa ngoại):");
-            e.printStackTrace(); 
-            return false;
-        }
-    }
-
-    // Tìm kiếm tác giả (theo Tên, Email, SĐT, Mã)
-    public List<TacGia> timKiemTacGia(String keyword) {
-        List<TacGia> ds = new ArrayList<>();
-        String sql = "SELECT * FROM TACGIA WHERE " +
-                     "tenTacGia LIKE ? OR email LIKE ? OR sdt LIKE ? OR maTacGia LIKE ?";
-        String kwLike = "%" + keyword + "%";
+    /**
+     * HÀM QUAN TRỌNG: Tìm Tác Giả theo tên, nếu không có, tạo mới và trả về.
+     */
+    public TacGia findOrCreateTacGia(String tenTacGia) {
+        // 1. Thử tìm
+        TacGia tacGia = findTacGiaByTen(tenTacGia);
         
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, kwLike);
-            pstmt.setString(2, kwLike);
-            pstmt.setString(3, kwLike);
-            pstmt.setString(4, kwLike);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    ds.add(mapRowToTacGia(rs));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        // 2. Nếu tìm thấy, trả về ngay
+        if (tacGia != null) {
+            return tacGia;
         }
-        return ds;
+        
+        // 3. Nếu không tìm thấy, tạo mới và trả về
+        return addTacGia(tenTacGia);
     }
 }
