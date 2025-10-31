@@ -1,321 +1,327 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package dao;
+package QuanLyThuVien;
 
-import model.Sach;
-import model.TacGia;
-import util.DatabaseConnection;
-import java.sql.*; // Giữ nguyên import SQL
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.Date; // SỬA: Import cụ thể java.util.Date để tránh lỗi Ambiguous
 
-/**
- *
- * @author baonguyenn
- */
 public class SachDAO {
 
-    // Lớp AuthorInfo dùng cho tab "Duyệt Tác Giả"
-    public static class AuthorInfo {
-        public String authorName;
-        public int bookCount;
-        public AuthorInfo(String authorName, int bookCount) {
-            this.authorName = authorName;
-            this.bookCount = bookCount;
+    // 1. Tạo Mã Sách mới (ví dụ: SA001 -> SA002)
+    public String generateNewMaSach() throws Exception {
+        String sql = "SELECT TOP 1 maSach FROM SACH ORDER BY LEN(maSach) DESC, maSach DESC";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String newId = "SA001"; // ID mặc định nếu bảng trống
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            ps = conn.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                String lastId = rs.getString("maSach");
+                String trimmedLastId = lastId.trim();
+                int nextIdNum = Integer.parseInt(lastId.substring(2)) + 1;
+                newId = String.format("SA%03d", nextIdNum);
+            }
+        } catch (Exception e) {
+            System.err.println("LỖI NGHIÊM TRỌNG TRONG generateNewMaSach:");
+            e.printStackTrace(); 
+            // Ném lỗi ra để báo cho người dùng
+            throw new Exception("Lỗi khi tạo mã sách mới: " + e.getMessage());
+        } finally {
+            DatabaseConnection.closeResource(rs, ps, conn);
         }
+        return newId;
     }
 
-    //  Ánh xạ 1 hàng ResultSet thành đối tượng Sách
-    private Sach mapRowToSach(ResultSet rs) throws SQLException {
-        Sach s = new Sach();
-        s.setMaSach(rs.getString("maSach"));
-        s.setTenSach(rs.getString("tenSach"));
-        s.setNhaXuatBan(rs.getString("nhaXuatBan"));
-        s.setNamXuatBan(rs.getInt("namXuatBan"));
-        s.setSoLuong(rs.getInt("soLuong"));
-        s.setMoTa(rs.getString("moTa"));
-        s.setDuongDanAnh(rs.getString("duongDanAnh"));
-        s.setViTri(rs.getString("viTri"));
-        Timestamp ts = rs.getTimestamp("ngayThem");
-        if (ts != null) s.setNgayThem(new Date(ts.getTime()));
+    // 2. Thêm Sách Mới (Sử dụng Transaction)
+    public boolean addSach(Sach sach, List<TacGia> danhSachTacGia) {
+        Connection conn = null;
+        PreparedStatement psSach = null;
+        PreparedStatement psLink = null;
+        
+        // Câu lệnh SQL cho bảng SACH
+        String sqlSach = "INSERT INTO SACH (maSach, tenSach, nhaXuatBan, namXuatBan, soLuong, moTa, duongDanAnh, viTri, ngayThem, isArchived, conLai) "
+                       + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), 0, ?)";
+        
+        // Câu lệnh SQL cho bảng liên kết SACH_TACGIA
+        String sqlLink = "INSERT INTO SACH_TACGIA (maSach, maTacGia) VALUES (?, ?)";
 
-        s.setDanhSachTacGia(new ArrayList<>());
-        return s;
-    }
+        try {
+            conn = DatabaseConnection.getConnection();
+            // BẮT ĐẦU TRANSACTION
+            conn.setAutoCommit(false);
 
-    // Helper dùng chung: chạy SQL và gom nhóm tác giả theo sách (many-to-many)
-    protected List<Sach> getSachInternal(String sql, Object... params) {
-        Map<String, Sach> sachMap = new LinkedHashMap<>();
+            // === BƯỚC A: Thêm vào bảng SACH ===
+            psSach = conn.prepareStatement(sqlSach);
+            psSach.setString(1, sach.getMaSach());
+            psSach.setString(2, sach.getTenSach());
+            psSach.setString(3, sach.getNhaXuatBan());
+            psSach.setInt(4, sach.getNamXuatBan());
+            psSach.setInt(5, sach.getSoLuong());
+            psSach.setString(6, sach.getMoTa());
+            psSach.setString(7, sach.getDuongDanAnh());
+            psSach.setString(8, sach.getViTri());
+            psSach.setInt(9, sach.getConLai()); // conLai = soLuong khi thêm mới
+            
+            psSach.executeUpdate();
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    String maSach = rs.getString("maSach");
-                    Sach sach = sachMap.get(maSach);
-
-                    if (sach == null) {
-                        sach = mapRowToSach(rs);
-                        sachMap.put(maSach, sach);
-                    }
-
-                    // Nếu có thông tin tác giả từ JOIN thì thêm
-                    String maTacGia = rs.getString("maTacGia_join");
-                    if (maTacGia != null) {
-                        TacGia tg = new TacGia();
-                        tg.setMaTacGia(maTacGia);
-                        tg.setTenTacGia(rs.getString("tenTacGia_join"));
-                        sach.getDanhSachTacGia().add(tg);
-                    }
+            // === BƯỚC B: Thêm vào bảng SACH_TACGIA ===
+            if (danhSachTacGia != null && !danhSachTacGia.isEmpty()) {
+                psLink = conn.prepareStatement(sqlLink);
+                
+                for (TacGia tg : danhSachTacGia) {
+                    psLink.setString(1, sach.getMaSach());
+                    psLink.setString(2, tg.getMaTacGia());
+                    psLink.addBatch(); // Thêm vào batch để thực thi 1 lần
                 }
+                psLink.executeBatch(); // Thực thi batch
             }
+
+            // KẾT THÚC TRANSACTION (thành công)
+            conn.commit();
+            return true;
 
         } catch (SQLException e) {
             e.printStackTrace();
+            // Nếu có lỗi, ROLLBACK (hủy bỏ) mọi thay đổi
+            try {
+                if (conn != null) {
+                    conn.rollback();
+                }
+            } catch (SQLException e2) {
+                e2.printStackTrace();
+            }
+            return false;
+        } finally {
+            // Trả lại chế độ auto-commit
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            // Đóng tất cả resource
+            DatabaseConnection.closeResource(psLink, conn); // psSach sẽ được đóng bởi psLink
+            if(psSach != null) {
+                try { psSach.close(); } catch (SQLException e) { /* Bỏ qua */ }
+            }
         }
+    }
+    
+    // 3. Lấy tất cả Sách (để hiện lên JTable)
+    public List<Sach> getAllSach() {
+        // Dùng Map để xử lý N-N (1 sách có nhiều tác giả)
+        Map<String, Sach> sachMap = new LinkedHashMap<>();
+        
+        // Lấy Sách KÈM Tác Giả
+        String sql = "SELECT s.*, tg.maTacGia, tg.tenTacGia "
+                   + "FROM SACH s "
+                   + "LEFT JOIN SACH_TACGIA st ON s.maSach = st.maSach "
+                   + "LEFT JOIN TACGIA tg ON st.maTacGia = tg.maTacGia "
+                   + "WHERE s.isArchived = 0 "
+                   + "ORDER BY s.maSach";
 
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            ps = conn.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String maSach = rs.getString("maSach");
+                Sach sach = sachMap.get(maSach);
+
+                // Nếu sách chưa có trong Map, tạo mới và thêm vào
+                if (sach == null) {
+                    sach = new Sach();
+                    sach.setMaSach(maSach);
+                    sach.setTenSach(rs.getString("tenSach"));
+                    sach.setNhaXuatBan(rs.getString("nhaXuatBan"));
+                    sach.setNamXuatBan(rs.getInt("namXuatBan"));
+                    sach.setSoLuong(rs.getInt("soLuong"));
+                    sach.setMoTa(rs.getString("moTa"));
+                    sach.setDuongDanAnh(rs.getString("duongDanAnh"));
+                    sach.setNgayThem(rs.getTimestamp("ngayThem"));
+                    sach.setViTri(rs.getString("viTri"));
+                    sach.setConLai(rs.getInt("conLai"));
+                    sach.setArchived(rs.getBoolean("isArchived"));
+                    
+                    sachMap.put(maSach, sach);
+                }
+
+                // Thêm Tác giả cho Sách (nếu có)
+                String maTacGia = rs.getString("maTacGia");
+                if (maTacGia != null) {
+                    TacGia tg = new TacGia();
+                    tg.setMaTacGia(maTacGia);
+                    tg.setTenTacGia(rs.getString("tenTacGia"));
+                    sach.getDanhSachTacGia().add(tg);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseConnection.closeResource(rs, ps, conn);
+        }
+        
         return new ArrayList<>(sachMap.values());
     }
+    // 4. Lấy một Sách (kèm tác giả) theo Mã Sách
+    public Sach getSachByMa(String maSach) {
+        Sach sach = null;
+        String sql = "SELECT s.*, tg.maTacGia, tg.tenTacGia "
+                   + "FROM SACH s "
+                   + "LEFT JOIN SACH_TACGIA st ON s.maSach = st.maSach "
+                   + "LEFT JOIN TACGIA tg ON st.maTacGia = tg.maTacGia "
+                   + "WHERE s.maSach = ?";
 
-    //  Lấy tất cả sách (còn hoạt động)
-    public List<Sach> getAllSach() {
-        String sql = "SELECT s.*, t.maTacGia AS maTacGia_join, t.tenTacGia AS tenTacGia_join " +
-                     "FROM SACH s " +
-                     "LEFT JOIN SACH_TACGIA st ON s.maSach = st.maSach " +
-                     "LEFT JOIN TACGIA t ON st.maTacGia = t.maTacGia " +
-                     "WHERE s.isArchived = 0 " +
-                     "ORDER BY s.tenSach, t.tenTacGia";
-        return getSachInternal(sql);
-    }
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
 
-    // Lấy sách theo mã
-    public Sach getSachByMaSach(String maSach) {
-        String sql = "SELECT s.*, t.maTacGia AS maTacGia_join, t.tenTacGia AS tenTacGia_join " +
-                     "FROM SACH s " +
-                     "LEFT JOIN SACH_TACGIA st ON s.maSach = st.maSach " +
-                     "LEFT JOIN TACGIA t ON st.maTacGia = t.maTacGia " +
-                     "WHERE s.maSach = ? AND s.isArchived = 0 " +
-                     "ORDER BY t.tenTacGia";
-        List<Sach> results = getSachInternal(sql, maSach);
-        return results.isEmpty() ? null : results.get(0);
-    }
-
-    // Lấy sách theo tác giả
-    public List<Sach> getSachByTacGia(String maTacGia) {
-        String sql = "SELECT s.*, t.maTacGia AS maTacGia_join, t.tenTacGia AS tenTacGia_join " +
-                     "FROM SACH s " +
-                     "LEFT JOIN SACH_TACGIA st ON s.maSach = st.maSach " +
-                     "LEFT JOIN TACGIA t ON st.maTacGia = t.maTacGia " +
-                     "WHERE s.maSach IN (SELECT maSach FROM SACH_TACGIA WHERE maTacGia = ?) " +
-                     "AND s.isArchived = 0 " +
-                     "ORDER BY s.tenSach, t.tenTacGia";
-        return getSachInternal(sql, maTacGia);
-    }
-
-    // Thêm sách mới (transaction)
-    public boolean themSach(Sach sach) {
-        // CẢI THIỆN: Thay NOW() (MySQL) bằng GETDATE() (SQL Server)
-        String sqlSach = "INSERT INTO SACH(maSach, tenSach, nhaXuatBan, namXuatBan, soLuong, moTa, duongDanAnh, viTri, ngayThem, isArchived) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), 0)"; 
-        String sqlSachTacGia = "INSERT INTO SACH_TACGIA(maSach, maTacGia) VALUES(?, ?)";
-
-        Connection conn = null; // Khai báo conn bên ngoài try-with-resources để dùng trong catch
         try {
             conn = DatabaseConnection.getConnection();
-            conn.setAutoCommit(false);
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, maSach);
+            rs = ps.executeQuery();
 
-            // 1. Thêm Sách
-            try (PreparedStatement pstmtSach = conn.prepareStatement(sqlSach)) {
-                pstmtSach.setString(1, sach.getMaSach());
-                pstmtSach.setString(2, sach.getTenSach());
-                pstmtSach.setString(3, sach.getNhaXuatBan());
-                if (sach.getNamXuatBan() > 0)
-                    pstmtSach.setInt(4, sach.getNamXuatBan());
-                else
-                    pstmtSach.setNull(4, Types.INTEGER);
-                pstmtSach.setInt(5, sach.getSoLuong());
-                pstmtSach.setString(6, sach.getMoTa());
-                pstmtSach.setString(7, sach.getDuongDanAnh());
-                pstmtSach.setString(8, sach.getViTri());
-                pstmtSach.executeUpdate();
-            }
+            while (rs.next()) {
+                // Nếu sách chưa được tạo (chạy lần đầu)
+                if (sach == null) {
+                    sach = new Sach();
+                    sach.setMaSach(rs.getString("maSach"));
+                    sach.setTenSach(rs.getString("tenSach"));
+                    sach.setNhaXuatBan(rs.getString("nhaXuatBan"));
+                    sach.setNamXuatBan(rs.getInt("namXuatBan"));
+                    sach.setSoLuong(rs.getInt("soLuong"));
+                    sach.setMoTa(rs.getString("moTa"));
+                    sach.setDuongDanAnh(rs.getString("duongDanAnh"));
+                    sach.setNgayThem(rs.getTimestamp("ngayThem"));
+                    sach.setViTri(rs.getString("viTri"));
+                    sach.setConLai(rs.getInt("conLai"));
+                    sach.setArchived(rs.getBoolean("isArchived"));
+                }
 
-            // 2. Thêm tác giả
-            if (sach.getDanhSachTacGia() != null && !sach.getDanhSachTacGia().isEmpty()) {
-                try (PreparedStatement pstmtTG = conn.prepareStatement(sqlSachTacGia)) {
-                    for (TacGia tg : sach.getDanhSachTacGia()) {
-                        pstmtTG.setString(1, sach.getMaSach());
-                        pstmtTG.setString(2, tg.getMaTacGia());
-                        pstmtTG.addBatch();
-                    }
-                    pstmtTG.executeBatch();
+                // Thêm Tác giả cho Sách (nếu có)
+                String maTacGia = rs.getString("maTacGia");
+                if (maTacGia != null) {
+                    TacGia tg = new TacGia();
+                    tg.setMaTacGia(maTacGia);
+                    tg.setTenTacGia(rs.getString("tenTacGia"));
+                    sach.getDanhSachTacGia().add(tg);
                 }
             }
-
-            conn.commit();
-            return true;
-
         } catch (SQLException e) {
             e.printStackTrace();
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            return false;
         } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
+            DatabaseConnection.closeResource(rs, ps, conn);
         }
+        return sach; // Trả về sách (hoặc null nếu không tìm thấy)
     }
 
-    // Sửa thông tin sách
-    public boolean suaSach(Sach sach) {
-        String sqlSach = "UPDATE SACH SET tenSach = ?, nhaXuatBan = ?, namXuatBan = ?, soLuong = ?, moTa = ?, duongDanAnh = ?, viTri = ? WHERE maSach = ?";
+    // 5. Cập nhật Sách (Sử dụng Transaction)
+    public boolean updateSach(Sach sach, List<TacGia> danhSachTacGia) {
+        Connection conn = null;
+        PreparedStatement psUpdateSach = null;
+        PreparedStatement psDeleteLinks = null;
+        PreparedStatement psInsertLinks = null;
+
+        String sqlUpdateSach = "UPDATE SACH SET tenSach = ?, nhaXuatBan = ?, namXuatBan = ?, "
+                            + "soLuong = ?, moTa = ?, duongDanAnh = ?, viTri = ?, conLai = ? "
+                            + "WHERE maSach = ?";
         String sqlDeleteLinks = "DELETE FROM SACH_TACGIA WHERE maSach = ?";
-        String sqlInsertLinks = "INSERT INTO SACH_TACGIA(maSach, maTacGia) VALUES(?, ?)";
+        String sqlInsertLinks = "INSERT INTO SACH_TACGIA (maSach, maTacGia) VALUES (?, ?)";
 
-        Connection conn = null; // Khai báo conn bên ngoài try-with-resources để dùng trong catch/finally
         try {
             conn = DatabaseConnection.getConnection();
+            // BẮT ĐẦU TRANSACTION
             conn.setAutoCommit(false);
 
-            // Cập nhật sách
-            try (PreparedStatement pstmtSach = conn.prepareStatement(sqlSach)) {
-                pstmtSach.setString(1, sach.getTenSach());
-                pstmtSach.setString(2, sach.getNhaXuatBan());
-                if (sach.getNamXuatBan() > 0)
-                    pstmtSach.setInt(3, sach.getNamXuatBan());
-                else
-                    pstmtSach.setNull(3, Types.INTEGER);
-                pstmtSach.setInt(4, sach.getSoLuong());
-                pstmtSach.setString(5, sach.getMoTa());
-                pstmtSach.setString(6, sach.getDuongDanAnh());
-                pstmtSach.setString(7, sach.getViTri());
-                pstmtSach.setString(8, sach.getMaSach());
-                pstmtSach.executeUpdate();
-            }
+            // === BƯỚC A: Cập nhật bảng SACH ===
+            psUpdateSach = conn.prepareStatement(sqlUpdateSach);
+            psUpdateSach.setString(1, sach.getTenSach());
+            psUpdateSach.setString(2, sach.getNhaXuatBan());
+            psUpdateSach.setInt(3, sach.getNamXuatBan());
+            psUpdateSach.setInt(4, sach.getSoLuong());
+            psUpdateSach.setString(5, sach.getMoTa());
+            psUpdateSach.setString(6, sach.getDuongDanAnh());
+            psUpdateSach.setString(7, sach.getViTri());
+            psUpdateSach.setInt(8, sach.getConLai());
+            psUpdateSach.setString(9, sach.getMaSach());
+            psUpdateSach.executeUpdate();
 
-            // Xóa link tác giả cũ
-            try (PreparedStatement pstmtDelete = conn.prepareStatement(sqlDeleteLinks)) {
-                pstmtDelete.setString(1, sach.getMaSach());
-                pstmtDelete.executeUpdate();
-            }
+            // === BƯỚC B: Xóa tất cả liên kết Tác Giả cũ ===
+            psDeleteLinks = conn.prepareStatement(sqlDeleteLinks);
+            psDeleteLinks.setString(1, sach.getMaSach());
+            psDeleteLinks.executeUpdate();
 
-            // Thêm link tác giả mới
-            if (sach.getDanhSachTacGia() != null && !sach.getDanhSachTacGia().isEmpty()) {
-                try (PreparedStatement pstmtInsert = conn.prepareStatement(sqlInsertLinks)) {
-                    for (TacGia tg : sach.getDanhSachTacGia()) {
-                        pstmtInsert.setString(1, sach.getMaSach());
-                        pstmtInsert.setString(2, tg.getMaTacGia());
-                        pstmtInsert.addBatch();
-                    }
-                    pstmtInsert.executeBatch();
+            // === BƯỚC C: Thêm lại liên kết Tác Giả mới ===
+            if (danhSachTacGia != null && !danhSachTacGia.isEmpty()) {
+                psInsertLinks = conn.prepareStatement(sqlInsertLinks);
+                for (TacGia tg : danhSachTacGia) {
+                    psInsertLinks.setString(1, sach.getMaSach());
+                    psInsertLinks.setString(2, tg.getMaTacGia());
+                    psInsertLinks.addBatch();
                 }
+                psInsertLinks.executeBatch();
             }
 
+            // KẾT THÚC TRANSACTION (thành công)
             conn.commit();
             return true;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
+            try {
+                if (conn != null) conn.rollback(); // Rollback nếu có lỗi
+            } catch (SQLException e2) { e2.printStackTrace(); }
             return false;
         } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
+            // Trả lại auto-commit và đóng resources
+            try {
+                if (conn != null) conn.setAutoCommit(true);
+            } catch (SQLException e) { e.printStackTrace(); }
+            
+            if (psUpdateSach != null) try { psUpdateSach.close(); } catch (SQLException e) { /* Bỏ qua */ }
+            if (psDeleteLinks != null) try { psDeleteLinks.close(); } catch (SQLException e) { /* Bỏ qua */ }
+            DatabaseConnection.closeResource(psInsertLinks, conn); // Đóng psInsertLinks và conn
         }
     }
-
-    // Xóa sách (đánh dấu isArchived = 1)
-    public boolean xoaSach(String maSach) {
+    // 6. Xóa Mềm Sách (Soft Delete)
+    // Cập nhật cột isArchived = 1
+    public boolean softDeleteSach(String maSach) {
         String sql = "UPDATE SACH SET isArchived = 1 WHERE maSach = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        PreparedStatement ps = null;
 
-            pstmt.setString(1, maSach);
-            return pstmt.executeUpdate() > 0;
+        try {
+            conn = DatabaseConnection.getConnection();
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, maSach);
+            
+            int rowsAffected = ps.executeUpdate();
+            
+            // Trả về true nếu có 1 hàng bị ảnh hưởng (tức là update thành công)
+            return (rowsAffected > 0); 
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
-        }
-    }
-
-    // Tìm kiếm nâng cao
-    public List<Sach> timKiemSachNangCao(String keyword, String searchType) {
-        String kwLike = "%" + keyword.trim() + "%";
-
-        String sqlBase = "SELECT s.*, t.maTacGia AS maTacGia_join, t.tenTacGia AS tenTacGia_join " +
-                         "FROM SACH s " +
-                         "LEFT JOIN SACH_TACGIA st ON s.maSach = st.maSach " +
-                         "LEFT JOIN TACGIA t ON st.maTacGia = t.maTacGia ";
-        StringBuilder sqlWhere = new StringBuilder();
-        List<Object> params = new ArrayList<>();
-
-        try {
-            switch (searchType) {
-                case "Nhan đề":
-                    sqlWhere.append("WHERE UPPER(s.tenSach) LIKE ? AND s.isArchived = 0");
-                    params.add(kwLike.toUpperCase());
-                    break;
-                case "Tác giả":
-                    sqlWhere.append("WHERE s.maSach IN (SELECT st.maSach FROM SACH_TACGIA st JOIN TACGIA t2 ON st.maTacGia = t2.maTacGia WHERE UPPER(t2.tenTacGia) LIKE ?) AND s.isArchived = 0");
-                    params.add(kwLike.toUpperCase());
-                    break;
-                case "Năm xuất bản":
-                    int nam = Integer.parseInt(keyword);
-                    sqlWhere.append("WHERE s.namXuatBan = ? AND s.isArchived = 0");
-                    params.add(nam);
-                    break;
-                default:
-                    sqlWhere.append("WHERE s.isArchived = 0 AND (UPPER(s.tenSach) LIKE ? OR s.nhaXuatBan LIKE ? OR s.maSach LIKE ? OR s.viTri LIKE ?)");
-                    params.add(kwLike.toUpperCase());
-                    params.add(kwLike);
-                    params.add(kwLike);
-                    params.add(kwLike);
-                    break;
-            }
-
-            String sqlOrder = " ORDER BY s.tenSach, t.tenTacGia";
-            return getSachInternal(sqlBase + sqlWhere + sqlOrder, params.toArray());
-
-        } catch (NumberFormatException e) {
-            System.err.println("⚠️ Lỗi: Năm xuất bản phải là số!");
-            return new ArrayList<>();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
+            return false; // Thất bại
+        } finally {
+            // Dùng hàm helper trong DatabaseConnection để đóng
+            DatabaseConnection.closeResource(ps, conn);
         }
     }
 }
